@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 function App() {
   const [inputValue, setInputValue] = useState("");
   const [products, setProducts] = useState([]);
+  const [details, setDetails] = useState(null);
   const [show, setShow] = useState(false);
 
-  // utility function debounce
+  // utility function debounce (npm loadash)
   function debounce(callback, delay) {
     let timer;
     return (value) => {
@@ -41,6 +42,19 @@ function App() {
   // nell'array di dipendenze si passa anche la funzione getProducts perchè se questa cambia, useEffect lo deve sapere
   }, [inputValue, getProducts]);
 
+  // BONUS (ultima parte aggiunta con correzione)
+  const handleClick = async(id) => {
+    try {
+      const response = await fetch(`https://boolean-spec-frontend.vercel.app/freetestapi/products/${id}`);
+      const obj = await response.json();      
+      setDetails(obj);
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setShow(false);
+    }
+  }
+
   
   return (
     <main>
@@ -49,6 +63,7 @@ function App() {
           <div>
             <input 
               type="text"
+              placeholder="Cerca un prodotto"
               value={inputValue} 
               onChange={(e) => setInputValue(e.target.value)}
             />
@@ -56,18 +71,28 @@ function App() {
         </section>
 
         <section>
-          <div>
-            {show && (
-              <details>
-                <summary>Prodotti</summary>
-                {products.map((p, i) => (
-                  <div key={i}>
-                    <h3>{p.name}</h3>
-                  </div>
-                ))}
-              </details>
-            )}
-          </div>
+          {show && (
+            <div>
+              {products.length > 0 && (products.map(p => (
+                <div key={p.id}>
+                  <h3
+                    value={details}
+                    onClick={() => handleClick(p.id)}
+                  >
+                    {p.name}
+                  </h3>
+                </div>
+                )))}
+            </div>
+          )}
+          {details && (
+            <div key={details.id}>
+              <img src={details.image} alt={details.name} />
+              <h2>{details.name}</h2>
+              <p>{details.description}</p>
+              <p>{details.price}€</p>
+            </div>
+          )}
         </section>
       </div>
       
