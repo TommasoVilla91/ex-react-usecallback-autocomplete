@@ -1,29 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 function App() {
   const [inputValue, setInputValue] = useState("");
   const [products, setProducts] = useState([]);
   const [show, setShow] = useState(false);
 
-  const getProducts = async() => {
-    if(inputValue.trim() !== "") {
-      try {
-        const response = await fetch(`https://boolean-spec-frontend.vercel.app/freetestapi/products?search=${inputValue}`);
-        const [obj] = await response.json();
-        setProducts([...products, obj]);
-      } catch(err) {
-        console.error(err);
-      } finally {
-        setShow(true);
-      }
-    } else {
-      setShow(false)
+  // utility function debounce
+  function debounce(callback, delay) {
+    let timer;
+    return (value) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        callback(value);
+      }, delay)
     }
   }
 
+  const getProducts = useCallback(
+    // async va all'interno degli argomenti del debounce
+    debounce(async(value) => {
+        if(value.trim() !== "") {
+          try {
+            const response = await fetch(`https://boolean-spec-frontend.vercel.app/freetestapi/products?search=${value}`);
+            const [obj] = await response.json();
+            setProducts([...products, obj]);
+          } catch(err) {
+            console.error(err);
+          } finally {
+            setShow(true);
+          }
+        } else {
+          setShow(false)
+        }
+    }, 300), []
+  );
+
   useEffect(() => {
-    getProducts();
-  }, [inputValue])
+    // in fase invocativa gli passo i valori specifici
+    getProducts(inputValue);
+  // nell'array di dipendenze si passa anche la funzione getProducts perchè se questa cambia, useEffect lo deve sapere
+  }, [inputValue, getProducts]);
 
   
   return (
